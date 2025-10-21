@@ -24,7 +24,7 @@ unsigned long t0 = 0;   // Marca de tiempo
 void setup() {
   Serial.begin(9600);
   pinMode(LM35_PIN, INPUT);
-  pinMode(BTN_PIN, INPUT_PULLUP); // boton a GND
+  pinMode(BTN_PIN, INPUT); // boton a GND
   pinMode(LED_R, OUTPUT);
   pinMode(LED_Y, OUTPUT);
   pinMode(LED_G, OUTPUT);
@@ -46,13 +46,16 @@ void loop() {
   // ============================================================
 
   // Verifica si el boton esta presionado
-  if (digitalRead(BTN_PIN) == LOW) {
-    delay(20); // antirrebote simple
-    if (digitalRead(BTN_PIN) == LOW) { // confirmacion
+  if (digitalRead(BTN_PIN) == HIGH) {
+	Serial.println("Primer digitalRead(BTN_PIN) == HIGH");
+    // delay(20); // antirrebote simple
+    if (digitalRead(BTN_PIN) == HIGH) { // confirmacion
+	Serial.println("Segundo digitalRead(BTN_PIN) == HIGH");
       unsigned long presionado = millis();
 
       // Espera hasta que se suelte el boton
-      while (digitalRead(BTN_PIN) == LOW) {
+      while (digitalRead(BTN_PIN) == HIGH) {
+		Serial.println("while digitalRead(BTN_PIN) == HIGH");
         // Cada segundo destella LEDs 50ms
         if ((millis() - presionado) % 1000 < 50) destellar();
       }
