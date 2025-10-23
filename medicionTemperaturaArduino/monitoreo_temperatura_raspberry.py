@@ -22,10 +22,12 @@ from collections import deque
 # =============================================================
 # Configuracion de pines
 # =============================================================
-BTN_PIN = 2         # Pin digital del pulsador
-LED_R = 11          # LED ROJO
-LED_Y = 10          # LED AMARILLO
-LED_G = 9           # LED VERDE
+PIN_BOTON = 2           # Pin digital del pulsador
+PIN_LED_ROJO = 22       # LED ROJO
+PIN_LED_AMARILLO = 27   # LED AMARILLO
+PIN_LED_VERDE = 17      # LED VERDE
+PIN_SENSOR = 4 			# PENSOR TEMPERATURA
+
 
 # Constantes
 X = 0.07            # Margen de variacion de 7%
