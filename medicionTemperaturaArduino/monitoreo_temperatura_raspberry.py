@@ -94,11 +94,14 @@ def encender_uno(led):
     apagar_todos()
     GPIO.output(led, GPIO.HIGH)
 
-def destellar():
-    """Destella todos los LEDs por 50ms"""
+def destellar(tiempo=0.05):
+    """Destella todos los LEDs con tiempo configurable"""
+    apagar_todos()           # Asegura estado inicial
+    time.sleep(0.01)         # Pausa para contraste visual
     encender_todos()
-    time.sleep(0.05)
+    time.sleep(tiempo)       # Tiempo del destello (parametrizable)
     apagar_todos()
+    time.sleep(0.01)         # Pausa final
 
 # =============================================================
 # Funciones auxiliares
