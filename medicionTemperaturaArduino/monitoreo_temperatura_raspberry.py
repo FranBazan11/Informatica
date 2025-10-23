@@ -25,7 +25,7 @@ from collections import deque
 # =============================================================
 # Configuracion de pines (BCM -> equivalente pin fisico)
 # =============================================================
-PIN_BOTON = 2           # Boton - GPIO 2 (BCM)  = pin fisico 3
+PIN_BOTON = 3           # Boton - GPIO 2 (BCM)  = pin fisico 3
 PIN_LED_ROJO = 22       # LED Rojo - GPIO 22 (BCM) = pin fisico 15
 PIN_LED_AMARILLO = 27   # LED Amarillo - GPIO 27 (BCM) = pin fisico 13
 PIN_LED_VERDE = 17      # LED Verde - GPIO 17 (BCM) = pin fisico 11
@@ -164,16 +164,16 @@ def loop():
             # --- SECCION 1: Verificar pulsador --------------------------
             # ============================================================
             
-            if GPIO.input(PIN_BOTON) == GPIO.HIGH:
+            if GPIO.input(PIN_BOTON) == GPIO.LOW:
                 print("Boton presionado detectado")
                 time.sleep(0.02)  # Antirrebote
                 
-                if GPIO.input(PIN_BOTON) == GPIO.HIGH:  # Confirmacion
-                    print("Confirmacion de boton presionado")
+                if GPIO.input(PIN_BOTON) == GPIO.LOW:  # Confirmacion
+                    print(GPIO.input(3))
                     presionado = time.time()
                     
                     # Espera hasta que se suelte el boton
-                    while GPIO.input(PIN_BOTON) == GPIO.HIGH:
+                    while GPIO.input(PIN_BOTON) == GPIO.LOW:
                         # Cada segundo destella LEDs 50ms
                         tiempo_transcurrido = time.time() - presionado
                         if int(tiempo_transcurrido * 1000) % 1000 < 50:
