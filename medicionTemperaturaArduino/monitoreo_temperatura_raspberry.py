@@ -169,7 +169,6 @@ def loop():
                 time.sleep(0.02)  # Antirrebote
                 
                 if GPIO.input(PIN_BOTON) == GPIO.LOW:  # Confirmacion
-                    print(GPIO.input(3))
                     presionado = time.time()
                     
                     # Espera hasta que se suelte el boton
