@@ -7,11 +7,13 @@
 #  mediante un pulsador y muestra la tendencia termica con LEDs.
 #  
 #  Configuracion de pines GPIO (BCM):
-#  - DS18B20: GPIO 4 (protocolo 1-Wire)
-#  - Boton: GPIO 2
-#  - LED Rojo: GPIO 22
-#  - LED Amarillo: GPIO 27
-#  - LED Verde: GPIO 17
+#  Nota: Este script usa numeracion BCM (GPIO.setmode(GPIO.BCM)).
+#  A continuacion se indica el equivalente de "pin fisico" del header de 40 pines:
+#  - DS18B20: GPIO 4 (BCM)  = pin fisico 7   | VDD = pin fisico 1 (3.3V) | GND = pin fisico 6
+#  - Boton:   GPIO 2 (BCM)  = pin fisico 3
+#  - LED Rojo:      GPIO 22 (BCM) = pin fisico 15
+#  - LED Amarillo:  GPIO 27 (BCM) = pin fisico 13
+#  - LED Verde:     GPIO 17 (BCM) = pin fisico 11
 # =============================================================
 
 import RPi.GPIO as GPIO
@@ -21,12 +23,12 @@ import glob
 from collections import deque
 
 # =============================================================
-# Configuracion de pines
+# Configuracion de pines (BCM -> equivalente pin fisico)
 # =============================================================
-PIN_BOTON = 2           # Pin digital del pulsador
-PIN_LED_ROJO = 22       # LED ROJO
-PIN_LED_AMARILLO = 27   # LED AMARILLO
-PIN_LED_VERDE = 17      # LED VERDE
+PIN_BOTON = 2           # Boton - GPIO 2 (BCM)  = pin fisico 3
+PIN_LED_ROJO = 22       # LED Rojo - GPIO 22 (BCM) = pin fisico 15
+PIN_LED_AMARILLO = 27   # LED Amarillo - GPIO 27 (BCM) = pin fisico 13
+PIN_LED_VERDE = 17      # LED Verde - GPIO 17 (BCM) = pin fisico 11
 
 # Constantes
 X = 0.07            # Margen de variacion de 7%
