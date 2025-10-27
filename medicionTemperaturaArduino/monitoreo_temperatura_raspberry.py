@@ -226,24 +226,27 @@ def loop():
                 # Determinar tendencia
                 if len(lecturas) < N:
                     tendencia = "INSUFICIENTE"
-                    encender_todos()
+                    destellar()
                     print("No hay suficientes datos para calcular tendencia.")
                 else:
                     diff = temperatura - promedio
                     if diff > promedio * X:
                         tendencia = "ALZA"
+                        apagar_todos()
                         encender_uno(PIN_LED_ROJO)
                     elif diff < -promedio * X:
                         tendencia = "BAJA"
+                        apagar_todos()
                         encender_uno(PIN_LED_VERDE)
                     else:
                         tendencia = "ESTABLE"
+                        apagar_todos()
                         encender_uno(PIN_LED_AMARILLO)
                     
                     print(f"Diferencia: {diff:.3f}")
                     print(f"Tendencia: {tendencia}")
                 
-                destellar()
+               
                 print(f"Ciclo de {ciclo:.2f} s completado.")
                 print("-------------------------------------------")
             
