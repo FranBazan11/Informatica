@@ -20,7 +20,9 @@ import RPi.GPIO as GPIO
 import time
 import os
 import glob
+import csv
 from collections import deque
+from datetime import datetime
 
 # =============================================================
 # Configuracion de pines (BCM -> equivalente pin fisico)
@@ -35,10 +37,13 @@ X = 0.07            # Margen de variacion de 7%
 N = 5               # Cantidad de muestras para el promedio
 
 # Variables globales
-lecturas = deque(maxlen=N)  # Ultimas lecturas
+lecturas = deque()  # Ultimas lecturas
 promedio = 0.0
 ciclo = 3.5         # Ciclo inicial en segundos
 t0 = 0              # Marca de tiempo
+
+CARPETA_REGISTROS = "registros"
+ARCHIVO_REGISTRO = os.path.join(CARPETA_REGISTROS, "temperaturas.csv")
 
 # =============================================================
 # Configuracion del sensor DS18B20 (1-Wire)
@@ -121,6 +126,27 @@ def promedio_n(arr):
         return 0.0
     return sum(arr) / len(arr)
 
+
+def setup_archivo_registro():
+    """Crea carpeta y reinicia el archivo CSV de registro."""
+    os.makedirs(CARPETA_REGISTROS, exist_ok=True)
+    with open(ARCHIVO_REGISTRO, "w", newline="") as archivo:
+        writer = csv.writer(archivo)
+
+def registrar_datos(temperatura, tendencia):
+    """Agrega una línea con temperatura y tendencia al CSV."""
+    inicialTendencia = tendencia[0].upper()
+
+    print(f"registrar_datos - Tendencia {inicialTendencia}")
+
+    fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with open(ARCHIVO_REGISTRO, "a", newline="") as archivo:
+        writer = csv.writer(archivo)
+        writer.writerow([fecha_hora, inicialTendencia, f"{temperatura:.2f}"])
+    print(f"Registro guardado en {ARCHIVO_REGISTRO}")
+    print(f"Registro guardado: {fecha_hora} | {inicialTendencia} | {temperatura:.2f}°C")
+
 # =============================================================
 # Configuracion inicial
 # =============================================================
@@ -145,9 +171,7 @@ def setup():
     print("===========================================")
     print(f"Ciclo inicial: {ciclo} s")
     
-    #encender_todos()
-    #time.sleep(1)
-    #apagar_todos()
+    setup_archivo_registro()
     
     t0 = time.time()
 
@@ -230,6 +254,7 @@ def loop():
                     encender_todos()
                     print("No hay suficientes datos para calcular tendencia.")
                 else:
+                    destellar()
                     diff = temperatura - promedio
                     if diff > promedio * X:
                         tendencia = "ALZA"
@@ -246,11 +271,12 @@ def loop():
                     
                     print(f"Diferencia: {diff:.3f}")
                     print(f"Tendencia: {tendencia}")
-                
+
+                registrar_datos(temperatura, tendencia)
                
                 print(f"Ciclo de {ciclo:.2f} s completado.")
                 print("-------------------------------------------")
-            
+
             # Pequeña pausa para no saturar el CPU
             time.sleep(0.01)
             
