@@ -230,6 +230,7 @@ def loop():
                     encender_todos()
                     print("No hay suficientes datos para calcular tendencia.")
                 else:
+                    destellar()
                     diff = temperatura - promedio
                     if diff > promedio * X:
                         tendencia = "ALZA"
