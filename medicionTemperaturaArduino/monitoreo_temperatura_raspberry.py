@@ -20,7 +20,9 @@ import RPi.GPIO as GPIO
 import time
 import os
 import glob
+import csv
 from collections import deque
+from datetime import datetime
 
 # =============================================================
 # Configuracion de pines (BCM -> equivalente pin fisico)
@@ -35,7 +37,7 @@ X = 0.07            # Margen de variacion de 7%
 N = 5               # Cantidad de muestras para el promedio
 
 # Variables globales
-lecturas = deque(maxlen=N)  # Ultimas lecturas
+lecturas = deque()  # Ultimas lecturas
 promedio = 0.0
 ciclo = 3.5         # Ciclo inicial en segundos
 t0 = 0              # Marca de tiempo
@@ -120,6 +122,22 @@ def promedio_n(arr):
     if len(arr) == 0:
         return 0.0
     return sum(arr) / len(arr)
+
+def registrar_datos(temperatura, tendencia):
+    inicialTendencia = tendencia[0].upper()
+
+    print(f"registrar_datos - Tendencia {inicialTendencia}")
+
+    os.makedirs("registros", exist_ok=True)
+    nombre_archivo = os.path.join("registros", "temperaturas.csv")
+    fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(nombre_archivo, mode="a", newline="") as archivo:
+        writer = csv.writer(archivo)
+        if archivo.tell() == 0:
+        #writer.writerow(["FechaHora", "Temperatura_C", "Tendencia"])
+            writer.writerow([fecha_hora, f"{temperatura:.2f}", inicialTendencia])
+            print(f"Registro guardado en {nombre_archivo}")
+            print(f"Registro guardado: {fecha_hora} | {temperatura:.2f}°C | {tendencia}")
 
 # =============================================================
 # Configuracion inicial
@@ -247,11 +265,12 @@ def loop():
                     
                     print(f"Diferencia: {diff:.3f}")
                     print(f"Tendencia: {tendencia}")
-                
+
+                registrar_datos(temperatura, tendencia)
                
                 print(f"Ciclo de {ciclo:.2f} s completado.")
                 print("-------------------------------------------")
-            
+
             # Pequeña pausa para no saturar el CPU
             time.sleep(0.01)
             
