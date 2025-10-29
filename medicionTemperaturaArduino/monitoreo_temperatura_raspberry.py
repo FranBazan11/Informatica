@@ -42,6 +42,9 @@ promedio = 0.0
 ciclo = 3.5         # Ciclo inicial en segundos
 t0 = 0              # Marca de tiempo
 
+CARPETA_REGISTROS = "registros"
+ARCHIVO_REGISTRO = os.path.join(CARPETA_REGISTROS, "temperaturas.csv")
+
 # =============================================================
 # Configuracion del sensor DS18B20 (1-Wire)
 # =============================================================
@@ -123,21 +126,26 @@ def promedio_n(arr):
         return 0.0
     return sum(arr) / len(arr)
 
+
+def setup_archivo_registro():
+    """Crea carpeta y reinicia el archivo CSV de registro."""
+    os.makedirs(CARPETA_REGISTROS, exist_ok=True)
+    with open(ARCHIVO_REGISTRO, "w", newline="") as archivo:
+        writer = csv.writer(archivo)
+
 def registrar_datos(temperatura, tendencia):
+    """Agrega una línea con temperatura y tendencia al CSV."""
     inicialTendencia = tendencia[0].upper()
 
     print(f"registrar_datos - Tendencia {inicialTendencia}")
 
-    os.makedirs("registros", exist_ok=True)
-    nombre_archivo = os.path.join("registros", "temperaturas.csv")
     fecha_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(nombre_archivo, mode="a", newline="") as archivo:
+
+    with open(ARCHIVO_REGISTRO, "a", newline="") as archivo:
         writer = csv.writer(archivo)
-        if archivo.tell() == 0:
-        #writer.writerow(["FechaHora", "Temperatura_C", "Tendencia"])
-            writer.writerow([fecha_hora, f"{temperatura:.2f}", inicialTendencia])
-            print(f"Registro guardado en {nombre_archivo}")
-            print(f"Registro guardado: {fecha_hora} | {temperatura:.2f}°C | {tendencia}")
+        writer.writerow([fecha_hora, inicialTendencia, f"{temperatura:.2f}"])
+    print(f"Registro guardado en {ARCHIVO_REGISTRO}")
+    print(f"Registro guardado: {fecha_hora} | {inicialTendencia} | {temperatura:.2f}°C")
 
 # =============================================================
 # Configuracion inicial
@@ -163,9 +171,7 @@ def setup():
     print("===========================================")
     print(f"Ciclo inicial: {ciclo} s")
     
-    #encender_todos()
-    #time.sleep(1)
-    #apagar_todos()
+    setup_archivo_registro()
     
     t0 = time.time()
 
