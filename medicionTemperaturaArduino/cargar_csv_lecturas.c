@@ -1,7 +1,12 @@
-// cargar_csv_lecturas.c
-// Lee "timestamp,tendencia,temperatura_C" y guarda en memoria dinámica.
-// Compilar:  gcc -std=c11 -O2 cargar_csv_lecturas.c -o cargar_csv_lecturas
-// Ejecutar:  ./cargar_csv_lecturas /ruta/al/registro.csv
+// =============================================================
+// Analizador estadístico de lecturas de temperatura (CSV)
+// -------------------------------------------------------------
+// Lee "timestamp,tendencia,temperatura_C" y calcula:
+// - Cantidad de lecturas
+// - Mínimo y máximo (con fecha/hora)
+// - Media, mediana, moda
+// - Desviación estándar (muestral)
+// =============================================================
 
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
@@ -9,6 +14,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <math.h>
 
 typedef struct {
     char *timestamp;  // copia dinámica del timestamp
@@ -82,6 +88,7 @@ static int parse_line(const char *line, char **out_ts, char *out_tend, double *o
 
     if (c1 && c2 && c3) {
         trim(c1); trim(c2); trim(c3);
+        if (strcmp(c1, "FechaHora") == 0) { free(buf); return 2; } // cabecera
         char tchar = c2[0] ? c2[0] : 'N';
 
         errno = 0;
@@ -106,49 +113,117 @@ static int cargar_csv(const char *ruta, VectorLecturas *v) {
         return 0;
     }
     char linea[1024];
-    int first = 1;
     while (fgets(linea, sizeof(linea), f)) {
-        if (first) { // saltear encabezado si existe
-            first = 0;
-            if (strstr(linea, "timestamp")) continue;
-        }
         char *ts = NULL; char tend = 'N'; double temp = 0.0;
-        if (!parse_line(linea, &ts, &tend, &temp)) {
-            continue; // línea inválida -> ignorar
+        int ok = parse_line(linea, &ts, &tend, &temp);
+        if (ok == 1) {
+            if (!vec_push(v, ts, tend, temp)) { free(ts); fclose(f); return 0; }
+            free(ts);
         }
-        if (!vec_push(v, ts, tend, temp)) { free(ts); fclose(f); return 0; }
-        free(ts); // ya se copió dentro del vector
     }
     fclose(f);
     return 1;
 }
 
-/*-------------------- Demo ----------------------*/
+/*------------------ Estadísticas ----------------*/
+static int cmp_temp(const void *a, const void *b) {
+    double x = ((Lectura*)a)->temp - ((Lectura*)b)->temp;
+    return (x < 0) ? -1 : (x > 0);
+}
+
+static double media(VectorLecturas *v) {
+    long double sum = 0;
+    for (size_t i = 0; i < v->size; i++) sum += v->data[i].temp;
+    return (double)(sum / v->size);
+}
+
+static double mediana(VectorLecturas *v) {
+    qsort(v->data, v->size, sizeof(Lectura), cmp_temp);
+    if (v->size % 2)
+        return v->data[v->size/2].temp;
+    else
+        return (v->data[v->size/2 - 1].temp + v->data[v->size/2].temp) / 2.0;
+}
+
+static double moda(VectorLecturas *v) {
+    if (v->size == 0) return NAN;
+    qsort(v->data, v->size, sizeof(Lectura), cmp_temp);
+    double best = v->data[0].temp, last = v->data[0].temp;
+    size_t best_cnt = 1, cnt = 1;
+    for (size_t i = 1; i < v->size; i++) {
+        if (fabs(v->data[i].temp - last) < 1e-6)
+            cnt++;
+        else {
+            if (cnt > best_cnt) { best_cnt = cnt; best = last; }
+            last = v->data[i].temp; cnt = 1;
+        }
+    }
+    if (cnt > best_cnt) best = last;
+    return best;
+}
+
+static double desviacion_estandar(VectorLecturas *v, double mean) {
+    if (v->size < 2) return NAN;
+    long double sum = 0;
+    for (size_t i = 0; i < v->size; i++) {
+        long double diff = v->data[i].temp - mean;
+        sum += diff * diff;
+    }
+    return sqrt((double)(sum / (v->size - 1))); // muestral
+}
+
+/*-------------------- MAIN ----------------------*/
 int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr, "Uso: %s /ruta/al/registro.csv\n", argv[0]);
         return 1;
     }
 
-    VectorLecturas lects; vec_init(&lects);
+    VectorLecturas v; vec_init(&v);
 
-    if (!cargar_csv(argv[1], &lects)) {
-        vec_free(&lects);
+    if (!cargar_csv(argv[1], &v)) {
+        vec_free(&v);
         return 1;
     }
 
-    printf("Se cargaron %zu lecturas.\n", lects.size);
-
-    // Ejemplo: acceder a los datos “sueltos” ya guardados en memoria dinámica
-    // (acá solo imprimimos las primeras 5 para mostrar cómo se accede)
-    size_t mostrar = lects.size < 5 ? lects.size : 5;
-    for (size_t i = 0; i < mostrar; ++i) {
-        printf("[%zu] timestamp=%s  tendencia=%c  temp=%.3f C\n",
-               i, lects.data[i].timestamp, lects.data[i].tendencia, lects.data[i].temp);
+    if (v.size == 0) {
+        printf("El archivo no contiene lecturas válidas.\n");
+        vec_free(&v);
+        return 0;
     }
 
-    // A partir de acá podés calcular estadísticas, etc., usando lects.data[i].temp, etc.
+    // --- Mínimo y máximo ---
+    double min = v.data[0].temp, max = v.data[0].temp;
+    char *tmin = v.data[0].timestamp, *tmax = v.data[0].timestamp;
+    for (size_t i = 1; i < v.size; i++) {
+        if (v.data[i].temp < min) { min = v.data[i].temp; tmin = v.data[i].timestamp; }
+        if (v.data[i].temp > max) { max = v.data[i].temp; tmax = v.data[i].timestamp; }
+    }
 
-    vec_free(&lects);
+    double mean = media(&v);
+    double med = mediana(&v);
+    double mode = moda(&v);
+    double std = desviacion_estandar(&v, mean);
+
+    printf("=========================================\n");
+    printf("Archivo: %s\n", argv[1]);
+    printf("Cantidad de lecturas: %zu\n", v.size);
+    printf("-----------------------------------------\n");
+    printf("Temperatura mínima: %.2f °C (%s)\n", min, tmin);
+    printf("Temperatura máxima: %.2f °C (%s)\n", max, tmax);
+    printf("Media: %.2f °C\n", mean);
+    printf("Mediana: %.2f °C\n", med);
+    printf("Moda: %.2f °C\n", mode);
+    printf("Desviación estándar (muestral): %.2f °C\n", std);
+    printf("=========================================\n");
+
+    printf("\nJustificación:\n");
+    printf("Se utiliza la desviación estándar muestral porque:\n");
+    printf("- Las lecturas provienen de una muestra del sistema (no de toda la población posible).\n");
+    printf("- Mide la dispersión en las mismas unidades (°C), facilitando interpretación.\n");
+    printf("- Es apropiada cuando las mediciones son aproximadamente normales\n");
+    printf("  y no se esperan valores atípicos extremos.\n");
+
+    vec_free(&v);
     return 0;
 }
