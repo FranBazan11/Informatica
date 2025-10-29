@@ -145,9 +145,9 @@ def setup():
     print("===========================================")
     print(f"Ciclo inicial: {ciclo} s")
     
-    encender_todos()
-    time.sleep(1)
-    apagar_todos()
+    #encender_todos()
+    #time.sleep(1)
+    #apagar_todos()
     
     t0 = time.time()
 
@@ -224,6 +224,7 @@ def loop():
                 print(f"Promedio ultimas {len(lecturas)} lecturas: {promedio:.2f} C")
                 
                 # Determinar tendencia
+                print(f"Numero de lecturas {len(lecturas)}")
                 if len(lecturas) < N:
                     tendencia = "INSUFICIENTE"
                     encender_todos()
@@ -232,18 +233,21 @@ def loop():
                     diff = temperatura - promedio
                     if diff > promedio * X:
                         tendencia = "ALZA"
+                        apagar_todos()
                         encender_uno(PIN_LED_ROJO)
                     elif diff < -promedio * X:
                         tendencia = "BAJA"
+                        apagar_todos()
                         encender_uno(PIN_LED_VERDE)
                     else:
                         tendencia = "ESTABLE"
+                        apagar_todos()
                         encender_uno(PIN_LED_AMARILLO)
                     
                     print(f"Diferencia: {diff:.3f}")
                     print(f"Tendencia: {tendencia}")
                 
-                destellar()
+               
                 print(f"Ciclo de {ciclo:.2f} s completado.")
                 print("-------------------------------------------")
             
